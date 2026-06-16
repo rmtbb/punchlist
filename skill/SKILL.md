@@ -6,7 +6,9 @@ trigger: /punchlist
 
 # /punchlist — interactive markdown feedback list
 
-A single markdown file the user works down top-to-bottom — answering each item inline — then says "check the punchlist" so you read their answers back and action them. Re-entrant: they fill some, you action, they fill more.
+This skill does the whole loop end-to-end: **you generate the punchlist, open it in the user's browser, and collaborate on it live.** The user types answers and ticks boxes in the app; when they say "check it out" (or "check the punchlist") you read the file back, action everything they answered, and write your results inline — and because the app auto-reloads on external change, **your updates appear in their browser in real time.** No terminal back-and-forth, no hand-editing raw markdown. Re-entrant: they fill some, you action, they fill more.
+
+A single markdown file is the source of truth and the contract between you and the user. The app is a live two-way window onto it: their edits autosave to the file (so you always read their latest), and your edits to the file re-render in the app within ~1 second (so they watch you work).
 
 The markdown file is always the source of truth. The user can work it in two surfaces, and you write the **same format** either way:
 
@@ -107,7 +109,7 @@ Keep per-item context tight — the user should never have to leave the file to 
 ## The interaction loop
 
 1. Build the file, open it (the app if present, else their editor), and tell the user it's open — fill the `➡️ YOU:` lines and tick the boxes, then say "check the punchlist." In the app, answers autosave as they type; in an editor they just save normally.
-2. On "check the punchlist" (also accept "check the list / worklist", "k check", etc.): **Read the file** (the single source of truth, regardless of surface), parse each `➡️ YOU:` line and checkbox.
+2. On "check the punchlist" (also accept "check it out", "okay check it out", "check the list / worklist", "k check", etc.): **Read the file** (the single source of truth, regardless of surface), parse each `➡️ YOU:` line and checkbox.
 3. Action every answered item. For each, annotate the file **inline** under the item with its outcome so the file stays the source of truth:
    - `**→ DONE:** <what happened>`
    - `**→ BLOCKED:** <why / what's needed>` and mark the header `⏳`

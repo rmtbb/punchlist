@@ -712,7 +712,7 @@ async function checkExternal(){
 }
 window.addEventListener('focus', checkExternal);
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkExternal(); });
-setInterval(checkExternal, 2500);
+setInterval(checkExternal, 1200);
 
 function start(text){ LINES=text.replace(/\r\n/g,'\n').split('\n'); DIRTY=false;
   document.getElementById('welcome').classList.add('hidden');
