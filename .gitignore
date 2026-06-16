@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+node_modules/
+.vscode/
+.idea/
+
+# Personal branding / config overlays — never publish these
+.personal/
+*.local.json
+*-theme.json

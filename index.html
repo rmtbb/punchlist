@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Punchlist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<style>
+/* ============================================================
+   THEME LAYER — every visual is a variable. Restyling never
+   touches the markdown; theme state lives only in localStorage.
+   ============================================================ */
+:root{
+  --bg:#1a1830; --bg2:#222039; --surface:#2a2742; --surface2:#322f4e;
+  --text:#f0f2fb; --muted:#aab; --faint:#8888a8; --border:#3a3758;
+  --accent:#00a6ff; --accent2:#8152f2; --pink:#ff5eed;
+  --go:#2ed47a; --warn:#ffaa4b; --alert:#ff5a3d; --info:#58e5ff;
+  --radius:14px; --radius-sm:9px; --gap:18px;
+  --font-head:'Poppins',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-body:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --shadow:0 8px 30px rgba(0,0,0,.28);
+  --maxw:920px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, color-mix(in srgb, var(--accent2) 14%, transparent), transparent 60%),
+    radial-gradient(900px 500px at -10% 10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 55%),
+    var(--bg);
+  color:var(--text); font-family:var(--font-body);
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+a{color:var(--accent); text-decoration:underline; text-underline-offset:2px}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.86em;
+  background:color-mix(in srgb, var(--accent) 14%, var(--surface)); padding:.1em .4em; border-radius:5px;
+  color:var(--text)}
+h1,h2,h3,h4{font-family:var(--font-head); font-weight:600; line-height:1.2}
+
+/* ---------- top bar ---------- */
+.topbar{position:sticky; top:0; z-index:30; backdrop-filter:blur(14px);
+  background:color-mix(in srgb, var(--bg) 78%, transparent);
+  border-bottom:1px solid var(--border); padding:10px 18px;
+  display:flex; align-items:center; gap:14px}
+.brand{display:flex; align-items:center; gap:11px; min-width:0}
+.brand img{height:30px; width:auto; display:block; object-fit:contain}
+.brand .wordmark{font-family:var(--font-head); font-weight:600; font-size:18px; letter-spacing:-.01em}
+.brand .wordmark.hide{display:none}
+.spacer{flex:1}
+.statuschip{display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--muted);
+  background:var(--surface); border:1px solid var(--border); padding:5px 11px; border-radius:99px; white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%; background:var(--faint); flex:none}
+.dot.live{background:var(--go); box-shadow:0 0 0 3px color-mix(in srgb,var(--go) 25%,transparent)}
+.dot.dirty{background:var(--warn); box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 25%,transparent)}
+.btn{font-family:var(--font-body); font-size:13.5px; font-weight:500; color:var(--text);
+  background:var(--surface); border:1px solid var(--border); padding:7px 13px; border-radius:9px;
+  cursor:pointer; transition:.15s; display:inline-flex; align-items:center; gap:7px; white-space:nowrap}
+.btn:hover{background:var(--surface2); border-color:color-mix(in srgb,var(--accent) 50%,var(--border)); transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; color:#fff}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.icon{padding:7px 9px}
+.btn[disabled]{opacity:.4; cursor:not-allowed; transform:none}
+
+/* ---------- progress meter ---------- */
+.meter{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--muted)}
+.ring{--p:0; width:30px;height:30px;border-radius:50%;
+  background:conic-gradient(var(--go) calc(var(--p)*1%), var(--border) 0); display:grid; place-items:center; flex:none}
+.ring::after{content:''; width:21px;height:21px;border-radius:50%; background:var(--bg)}
+.ring b{position:absolute; font-size:9.5px; font-weight:600; color:var(--text); font-family:var(--font-body)}
+
+/* ---------- layout ---------- */
+.wrap{max-width:var(--maxw); margin:0 auto; padding:26px 18px 120px}
+.docintro{color:var(--muted); font-size:13.5px; margin:2px 0 22px; padding:14px 16px;
+  background:color-mix(in srgb,var(--surface) 55%,transparent); border:1px solid var(--border);
+  border-radius:var(--radius-sm); border-left:3px solid var(--accent)}
+.doctitle{font-size:30px; margin:6px 0 4px; letter-spacing:-.02em}
+
+/* ---------- toolbar (filters) ---------- */
+.filters{display:flex; gap:9px; align-items:center; margin-bottom:18px; flex-wrap:wrap}
+.search{flex:1; min-width:180px; position:relative}
+.search input{width:100%; background:var(--surface); border:1px solid var(--border); color:var(--text);
+  padding:9px 12px 9px 32px; border-radius:9px; font-family:var(--font-body); font-size:14px}
+.search input:focus{outline:none; border-color:var(--accent)}
+.search svg{position:absolute; left:10px; top:50%; transform:translateY(-50%); opacity:.5}
+.toggle{font-size:12.5px; color:var(--muted); background:var(--surface); border:1px solid var(--border);
+  padding:8px 12px; border-radius:9px; cursor:pointer; transition:.15s; user-select:none}
+.toggle.on{background:color-mix(in srgb,var(--accent) 22%,var(--surface)); color:var(--text);
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--border))}
+.fileswitch{font-size:12.5px; color:var(--text); background:var(--surface); border:1px solid var(--border);
+  padding:8px 10px; border-radius:9px; max-width:240px; cursor:pointer; font-family:var(--font-body)}
+.fileswitch:focus{outline:none; border-color:var(--accent)}
+
+/* ---------- sections & items ---------- */
+.section{margin-bottom:var(--gap); border:1px solid var(--border); border-radius:var(--radius);
+  background:color-mix(in srgb,var(--surface) 40%,transparent); overflow:hidden}
+.section>header{display:flex; align-items:center; gap:11px; padding:14px 17px; cursor:pointer;
+  user-select:none; transition:.15s}
+.section>header:hover{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+.section .sdot{width:11px;height:11px;border-radius:50%; flex:none;
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--scolor,var(--accent)) 18%,transparent); background:var(--scolor,var(--accent))}
+.section h2{font-size:16.5px; margin:0; flex:1}
+.section .scount{font-size:12px; color:var(--faint); font-weight:500}
+.section .chev{transition:.2s; opacity:.6}
+.section.collapsed .chev{transform:rotate(-90deg)}
+.section.collapsed .sbody{display:none}
+.sbody{padding:4px 17px 16px}
+
+.item{padding:14px 0; border-top:1px solid color-mix(in srgb,var(--border) 60%,transparent)}
+.item:first-child{border-top:none}
+.item h3{font-size:14.5px; margin:0 0 7px; color:var(--text)}
+.item h4{font-size:13.5px; margin:12px 0 5px; color:var(--muted)}
+.item p{margin:7px 0}
+.item ul{margin:7px 0; padding-left:20px}
+.item li{margin:3px 0}
+.prose{font-size:13.5px; color:#d8daee}
+.prose strong{color:var(--text); font-weight:600}
+.prose del{color:var(--faint)}
+
+/* tables */
+.tbl{width:100%; border-collapse:collapse; margin:10px 0; font-size:12.5px}
+.tbl th,.tbl td{border:1px solid var(--border); padding:6px 9px; text-align:left; vertical-align:top}
+.tbl th{background:var(--surface); font-family:var(--font-head); font-weight:500}
+
+/* checkbox rows */
+.check{display:flex; gap:10px; align-items:flex-start; padding:5px 0; cursor:pointer}
+.check input{appearance:none; width:18px;height:18px; border:1.6px solid var(--faint); border-radius:5px;
+  flex:none; margin-top:1px; cursor:pointer; transition:.15s; position:relative}
+.check input:checked{background:var(--go); border-color:var(--go)}
+.check input:checked::after{content:'✓'; position:absolute; inset:0; display:grid; place-items:center;
+  color:#0b1f14; font-size:12px; font-weight:800}
+.check.done .ctext{color:var(--faint); text-decoration:line-through}
+.ctext{font-size:13.5px}
+
+/* option chips */
+.opts{display:flex; gap:7px; flex-wrap:wrap; margin:9px 0 4px}
+.chip{font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--info);
+  background:color-mix(in srgb,var(--info) 12%,var(--surface)); border:1px solid color-mix(in srgb,var(--info) 30%,var(--border));
+  padding:4px 9px; border-radius:7px; cursor:pointer; transition:.13s}
+.chip:hover{background:color-mix(in srgb,var(--info) 24%,var(--surface)); transform:translateY(-1px)}
+
+/* the YOU answer field — the editable slot */
+.you{margin:9px 0 2px; position:relative}
+.you-label{font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--pink); display:flex; align-items:center; gap:6px; margin-bottom:5px}
+.you-label::before{content:'➡'; font-size:13px}
+.you textarea{width:100%; background:color-mix(in srgb,var(--pink) 7%,var(--surface)); resize:none; overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--pink) 28%,var(--border)); border-radius:9px; color:var(--text);
+  font-family:var(--font-body); font-size:14px; padding:10px 12px; line-height:1.5; transition:.15s; min-height:40px}
+.you textarea:focus{outline:none; border-color:var(--pink);
+  box-shadow:0 0 0 3px color-mix(in srgb,var(--pink) 16%,transparent)}
+.you textarea.filled{background:color-mix(in srgb,var(--go) 8%,var(--surface));
+  border-color:color-mix(in srgb,var(--go) 35%,var(--border))}
+
+.item.dim{opacity:.32; filter:saturate(.5)}
+.hidden{display:none !important}
+
+/* ---------- inline editing (pencil) + add-note ---------- */
+.itemhead{display:flex; align-items:flex-start; gap:6px}
+.itemhead h3{flex:1; margin:0 0 7px}
+.iconbtn{background:none; border:none; color:var(--faint); cursor:pointer; font-size:13px; line-height:1;
+  padding:3px 6px; border-radius:6px; opacity:0; transition:.15s; flex:none}
+.section>header:hover .iconbtn, .item:hover .iconbtn, .doctitle:hover .iconbtn{opacity:.6}
+.iconbtn:hover{opacity:1 !important; background:var(--surface2); color:var(--text)}
+.doctitle .iconbtn{font-size:15px; vertical-align:middle; margin-left:8px}
+.rawedit{margin:10px 0; border:1px solid var(--accent); border-radius:10px; padding:10px;
+  background:var(--surface); box-shadow:var(--shadow)}
+.rawedit textarea{width:100%; background:var(--bg); color:var(--text); border:1px solid var(--border);
+  border-radius:8px; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; line-height:1.55;
+  padding:10px; resize:vertical; min-height:120px}
+.rawedit textarea:focus{outline:none; border-color:var(--accent)}
+.ederow{display:flex; gap:8px; align-items:center; margin-top:8px}
+.edhint{font-size:11px; color:var(--faint); margin-left:auto}
+.addnote{margin:10px 0 2px}
+.addnote button{font-size:12px; color:var(--faint); background:none; border:1px dashed var(--border);
+  border-radius:8px; padding:6px 12px; cursor:pointer; transition:.15s; width:100%}
+.addnote button:hover{color:var(--accent); border-color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 8%,transparent)}
+
+/* ---------- empty / welcome state ---------- */
+.welcome{max-width:560px; margin:8vh auto; text-align:center; padding:0 20px}
+.welcome .mk{font-size:54px; margin-bottom:6px}
+.welcome h1{font-size:26px; margin:0 0 8px; letter-spacing:-.02em}
+.welcome p{color:var(--muted); font-size:14.5px; margin:0 auto 22px; max-width:440px}
+.welcome .row{display:flex; gap:10px; justify-content:center; flex-wrap:wrap}
+.note{font-size:12px; color:var(--faint); margin-top:18px}
+
+/* ---------- theme drawer ---------- */
+.drawer{position:fixed; top:0; right:0; height:100%; width:360px; max-width:90vw; z-index:50;
+  background:var(--bg2); border-left:1px solid var(--border); box-shadow:var(--shadow);
+  transform:translateX(100%); transition:.28s cubic-bezier(.4,0,.2,1); overflow-y:auto; padding:20px}
+.drawer.open{transform:translateX(0)}
+.scrim{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:49; opacity:0; pointer-events:none; transition:.28s}
+.scrim.open{opacity:1; pointer-events:auto}
+.drawer h2{font-size:18px; margin:0 0 4px}
+.drawer .sub{font-size:12px; color:var(--faint); margin-bottom:18px}
+.fld{margin-bottom:15px}
+.fld label{display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px}
+.fld input[type=text],.fld select{width:100%; background:var(--surface); border:1px solid var(--border);
+  color:var(--text); padding:8px 10px; border-radius:8px; font-family:var(--font-body); font-size:13px}
+.fld input:focus,.fld select:focus{outline:none; border-color:var(--accent)}
+.swatches{display:grid; grid-template-columns:repeat(2,1fr); gap:9px}
+.swatch{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted)}
+.swatch input[type=color]{width:30px;height:30px; border:1px solid var(--border); border-radius:7px;
+  background:none; cursor:pointer; padding:0}
+.drawer hr{border:none; border-top:1px solid var(--border); margin:18px 0}
+.drawer .row2{display:flex; gap:9px}
+.logo-prev{display:flex; align-items:center; justify-content:center; height:54px; background:var(--bg);
+  border:1px dashed var(--border); border-radius:9px; margin-bottom:9px; overflow:hidden}
+.logo-prev img{max-height:38px; max-width:80%; object-fit:contain}
+.toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(20px); z-index:60;
+  background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:10px 18px;
+  border-radius:99px; font-size:13px; box-shadow:var(--shadow); opacity:0; transition:.25s; pointer-events:none}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+@media print{.topbar,.filters,.drawer,.scrim,.toast,.opts{display:none!important}
+  body{background:#fff;color:#000} .section{break-inside:avoid}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <img id="logoImg" alt="" />
+    <span class="wordmark" id="wordmark">Punchlist</span>
+  </div>
+  <div class="spacer"></div>
+  <div class="meter" id="meter" style="display:none">
+    <div class="ring" id="ring"><b id="ringPct">0%</b></div>
+    <span id="meterTxt"></span>
+  </div>
+  <div class="statuschip" id="statuschip" style="display:none">
+    <span class="dot" id="statusDot"></span><span id="statusTxt">Not connected</span>
+  </div>
+  <button class="btn icon" id="refreshBtn" title="Reload from disk (picks up edits made elsewhere)">↻</button>
+  <button class="btn icon" id="themeBtn" title="Theme">🎨</button>
+  <button class="btn icon" id="saveBtn" title="Save (⌘S)" disabled>💾</button>
+  <button class="btn icon" id="folderBtn" title="Open a folder of punchlists">📁</button>
+  <button class="btn primary" id="openBtn">Open .md</button>
+</div>
+
+<!-- WELCOME -->
+<div class="wrap" id="welcome">
+  <div class="welcome">
+    <div class="mk">✓</div>
+    <h1>Punchlist</h1>
+    <p>An interactive lens over a markdown punchlist. Open a <code>.md</code> file — your answers and checkboxes write straight back to it. The markdown stays the source of truth; this just makes it nice to work in.</p>
+    <div class="row">
+      <button class="btn primary" id="openBtn2">Open a file</button>
+      <button class="btn" id="openFolderBtn2">Open a folder</button>
+      <button class="btn" id="reopenBtn" style="display:none"></button>
+      <button class="btn" id="demoBtn">Load demo</button>
+    </div>
+    <p class="note" id="fsNote"></p>
+  </div>
+</div>
+
+<!-- RENDERED PUNCHLIST -->
+<div class="wrap hidden" id="app">
+  <h1 class="doctitle" id="docTitle"></h1>
+  <div class="docintro" id="docIntro"></div>
+  <div class="filters">
+    <div class="search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="searchIn" placeholder="Filter items…" />
+    </div>
+    <div class="toggle" id="fOpen">Unanswered only</div>
+    <div class="toggle" id="fTodo">Open checkboxes</div>
+    <select id="fileSwitch" class="fileswitch" title="Switch punchlist in this folder" style="display:none"></select>
+  </div>
+  <div id="sections"></div>
+</div>
+
+<!-- THEME DRAWER -->
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer">
+  <h2>Theme</h2>
+  <div class="sub">Visual only. Never written to your markdown.</div>
+
+  <div class="fld">
+    <label>Preset</label>
+    <select id="presetSel">
+      <option value="aurora">Aurora (default)</option>
+      <option value="midnight">Midnight</option>
+      <option value="paper">Paper (light)</option>
+      <option value="custom">Custom…</option>
+    </select>
+  </div>
+
+  <div class="fld">
+    <label>Logo</label>
+    <div class="logo-prev" id="logoPrev"></div>
+    <div class="row2">
+      <button class="btn" id="logoUp" style="flex:1">Upload image</button>
+      <button class="btn" id="logoClear" title="Remove logo">✕</button>
+    </div>
+    <input type="file" id="logoFile" accept="image/*" style="display:none" />
+  </div>
+  <div class="fld">
+    <label>Wordmark text (shown if no logo)</label>
+    <input type="text" id="wmIn" placeholder="Punchlist" />
+  </div>
+
+  <hr/>
+  <div class="fld">
+    <label>Colors</label>
+    <div class="swatches">
+      <label class="swatch"><input type="color" data-var="--accent"/>Accent</label>
+      <label class="swatch"><input type="color" data-var="--accent2"/>Accent 2</label>
+      <label class="swatch"><input type="color" data-var="--bg"/>Background</label>
+      <label class="swatch"><input type="color" data-var="--surface"/>Surface</label>
+      <label class="swatch"><input type="color" data-var="--text"/>Text</label>
+      <label class="swatch"><input type="color" data-var="--pink"/>Answer</label>
+      <label class="swatch"><input type="color" data-var="--go"/>Done</label>
+      <label class="swatch"><input type="color" data-var="--border"/>Border</label>
+    </div>
+  </div>
+
+  <hr/>
+  <div class="fld">
+    <label>Heading font</label>
+    <input type="text" id="fHead" placeholder="Poppins" />
+  </div>
+  <div class="fld">
+    <label>Body font</label>
+    <input type="text" id="fBody" placeholder="Inter" />
+  </div>
+  <div class="sub">Type any Google Font family name; it loads automatically. Falls back to system fonts offline.</div>
+
+  <hr/>
+  <div class="row2">
+    <button class="btn" id="exportTheme" style="flex:1">Export theme</button>
+    <button class="btn" id="importTheme" style="flex:1">Import</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+  </div>
+  <button class="btn" id="resetTheme" style="width:100%; margin-top:9px">Reset to preset</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PRESETS
+   ============================================================ */
+const PRESETS = {
+  aurora:{ name:'Aurora',
+    vars:{'--bg':'#1a1830','--bg2':'#222039','--surface':'#2a2742','--surface2':'#322f4e',
+      '--text':'#f0f2fb','--muted':'#aaaabb','--faint':'#8888a8','--border':'#3a3758',
+      '--accent':'#00a6ff','--accent2':'#8152f2','--pink':'#ff5eed','--go':'#2ed47a',
+      '--warn':'#ffaa4b','--alert':'#ff5a3d','--info':'#58e5ff'},
+    fonts:{head:'Poppins',body:'Inter'}, logo:'', wordmark:'Punchlist' },
+  midnight:{ name:'Midnight',
+    vars:{'--bg':'#0d1117','--bg2':'#11161d','--surface':'#161b22','--surface2':'#1d242d',
+      '--text':'#e6edf3','--muted':'#9aa4b2','--faint':'#6e7681','--border':'#2a313a',
+      '--accent':'#58a6ff','--accent2':'#7c83ff','--pink':'#ff7b9c','--go':'#3fb950',
+      '--warn':'#d29922','--alert':'#f85149','--info':'#56d4dd'},
+    fonts:{head:'Poppins',body:'Inter'}, logo:'', wordmark:'Punchlist' },
+  paper:{ name:'Paper',
+    vars:{'--bg':'#f5f4ef','--bg2':'#ffffff','--surface':'#ffffff','--surface2':'#eeece4',
+      '--text':'#1d1c2c','--muted':'#5d5b70','--faint':'#9b99ac','--border':'#dcdad0',
+      '--accent':'#2563eb','--accent2':'#7c3aed','--pink':'#db2777','--go':'#16a34a',
+      '--warn':'#d97706','--alert':'#dc2626','--info':'#0891b2'},
+    fonts:{head:'Poppins',body:'Inter'}, logo:'', wordmark:'Punchlist' },
+};
+const STATUS_COLORS = { '🔴':'--alert','🟠':'--warn','🟡':'--info','🟢':'--go','✅':'--go','⚠':'--warn','⚠️':'--warn','🔵':'--accent','🧭':'--accent2','📡':'--info','🛒':'--warn','🟣':'--accent2' };
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let LINES = [];           // canonical markdown, line-addressable
+let FILE_HANDLE = null;   // FileSystemFileHandle when connected
+let DIRTY = false;
+let LAST_MTIME = null;    // file.lastModified we last read/wrote — detects external edits
+const hasFS = 'showOpenFilePicker' in window;
+const LS = { theme:'punchlist.theme' };
+
+/* ============================================================
+   THEME ENGINE
+   ============================================================ */
+function loadFont(family){
+  if(!family) return;
+  const id = 'gf-'+family.replace(/\W+/g,'-');
+  if(document.getElementById(id)) return;
+  const l=document.createElement('link'); l.id=id; l.rel='stylesheet';
+  l.href='https://fonts.googleapis.com/css2?family='+encodeURIComponent(family)+':wght@400;500;600;700&display=swap';
+  document.head.appendChild(l);
+}
+function applyTheme(t){
+  const root=document.documentElement.style;
+  Object.entries(t.vars||{}).forEach(([k,v])=>root.setProperty(k,v));
+  if(t.fonts){
+    loadFont(t.fonts.head); loadFont(t.fonts.body);
+    root.setProperty('--font-head', `'${t.fonts.head}',-apple-system,sans-serif`);
+    root.setProperty('--font-body', `'${t.fonts.body}',-apple-system,'Segoe UI',sans-serif`);
+  }
+  // logo / wordmark
+  const img=document.getElementById('logoImg'), wm=document.getElementById('wordmark');
+  if(t.logo){ img.src=t.logo; img.style.display='block'; wm.classList.add('hide'); }
+  else { img.style.display='none'; wm.classList.remove('hide'); wm.textContent=t.wordmark||'Punchlist'; }
+  const lp=document.getElementById('logoPrev');
+  lp.innerHTML = t.logo ? `<img src="${t.logo}"/>` : `<span style="color:var(--faint);font-size:12px">no logo · wordmark shown</span>`;
+}
+function currentTheme(){
+  try{ return JSON.parse(localStorage.getItem(LS.theme)) || structuredClone(PRESETS.aurora); }
+  catch(e){ return structuredClone(PRESETS.aurora); }
+}
+function saveTheme(t){ localStorage.setItem(LS.theme, JSON.stringify(t)); }
+function syncDrawer(t){
+  document.getElementById('presetSel').value = t.preset || 'custom';
+  document.getElementById('wmIn').value = t.wordmark || '';
+  document.getElementById('fHead').value = t.fonts?.head || '';
+  document.getElementById('fBody').value = t.fonts?.body || '';
+  document.querySelectorAll('.swatch input[type=color]').forEach(inp=>{
+    const v=t.vars?.[inp.dataset.var]; if(v && /^#[0-9a-f]{6}$/i.test(v)) inp.value=v;
+  });
+  applyTheme(t);
+}
+
+/* ============================================================
+   MARKDOWN — inline renderer (safe: escape first, then format)
+   ============================================================ */
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function inline(s){
+  s=esc(s);
+  s=s.replace(/`([^`]+)`/g,'<code>$1</code>');
+  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)[^)]*\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s=s.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,'<span title="$1">$2</span>');
+  s=s.replace(/\[\[([^\]]+)\]\]/g,'<span>$1</span>');
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  s=s.replace(/~~([^~]+)~~/g,'<del>$1</del>');
+  s=s.replace(/(^|[^*])\*([^*]+)\*/g,'$1<em>$2</em>');
+  return s;
+}
+const reYou   = /^(\s*)(➡️?\s*YOU:)(.*)$/;
+const reCheck = /^(\s*[-*]\s+)`?\[([ xX])\]`?\s?(.*)$/;  // GFM `- [ ]` and vault-style `` - `[ ]` ``
+const reH1=/^#\s+(.*)$/, reH2=/^##\s+(.*)$/, reH3=/^###\s+(.*)$/, reH4=/^####\s+(.*)$/;
+const reBullet=/^(\s*)[-*]\s+(.*)$/;
+const reOpts=/Options:/;
+function leadEmoji(s){ for(const k of Object.keys(STATUS_COLORS)){ if(s.includes(k)) return STATUS_COLORS[k]; } return '--accent'; }
+
+/* block boundaries — recomputed each render so structural edits stay correct */
+let BOUNDS=[];
+function computeBounds(){ BOUNDS=[]; for(let k=0;k<LINES.length;k++){ if(reH2.test(LINES[k])||reH3.test(LINES[k])) BOUNDS.push(k); } }
+function nextBound(s){ for(const b of BOUNDS) if(b>s) return b; return LINES.length; }      // next ## or ### after s
+function nextH2(s){ for(const b of BOUNDS) if(b>s && reH2.test(LINES[b])) return b; return LINES.length; } // next ## after s
+function firstH2(){ for(const b of BOUNDS) if(reH2.test(LINES[b])) return b; return LINES.length; }
+function mkIconBtn(txt,title,fn){ const b=document.createElement('button'); b.className='iconbtn'; b.textContent=txt; b.title=title;
+  b.onclick=e=>{ e.stopPropagation(); fn(); }; return b; }
+
+/* ============================================================
+   PARSE + RENDER
+   ============================================================ */
+function render(collapsedTitles){
+  collapsedTitles = collapsedTitles || new Set();
+  computeBounds();
+  const secWrap=document.getElementById('sections'); secWrap.innerHTML='';
+  let title='', introLines=[], i=0;
+  // title
+  for(; i<LINES.length; i++){ const m=LINES[i].match(reH1); if(m){title=m[1]; i++; break;} }
+  // intro until first ## or ---
+  for(; i<LINES.length; i++){ if(reH2.test(LINES[i])) break; const t=LINES[i].trim(); if(t==='---'){i++;break;} if(t) introLines.push(LINES[i]); }
+  const dt=document.getElementById('docTitle');
+  dt.innerHTML=inline(title||'Punchlist');
+  const fh=firstH2();
+  dt.appendChild(mkIconBtn('✎','Edit title + intro',()=>enterEdit(secWrap,0,fh,true)));
+  const intro=document.getElementById('docIntro');
+  if(introLines.length){ intro.innerHTML=introLines.map(inline).join('<br>'); intro.style.display=''; } else intro.style.display='none';
+
+  // sections
+  let cur=null, body=[];
+  const flush=()=>{ if(cur){ cur.bodyEl.innerHTML=''; renderBlocks(body, cur.bodyEl); cur=null; } body=[]; };
+  for(; i<LINES.length; i++){
+    const line=LINES[i], h2=line.match(reH2);
+    if(h2){
+      flush();
+      const h2idx=i, secEnd=nextH2(i), preEnd=nextBound(i);
+      const sec=document.createElement('div'); sec.className='section'; sec.dataset.title=h2[1];
+      if(collapsedTitles.has(h2[1])) sec.classList.add('collapsed');
+      sec.style.setProperty('--scolor',`var(${leadEmoji(h2[1])})`);
+      sec.innerHTML=`<header><span class="sdot"></span><h2>${inline(h2[1])}</h2><span class="scount"></span>
+        <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></header>
+        <div class="sbody"></div>`;
+      const bodyEl=sec.querySelector('.sbody'), hdr=sec.querySelector('header'), chev=hdr.querySelector('.chev');
+      hdr.insertBefore(mkIconBtn('✎','Edit section heading + intro',()=>enterEdit(sec,h2idx,preEnd)), chev);
+      hdr.insertBefore(mkIconBtn('＋','Add a note to this section',()=>insertNote(nextH2(h2idx))), chev);
+      hdr.onclick=()=>sec.classList.toggle('collapsed');
+      secWrap.appendChild(sec);
+      cur={sec,bodyEl}; body=[];
+    } else if(cur){ body.push({line, idx:i}); }
+  }
+  flush();
+  updateMeter(); applyFilters();
+}
+function rerender(){
+  const y=window.scrollY;
+  const collapsed=new Set([...document.querySelectorAll('.section.collapsed')].map(s=>s.dataset.title));
+  render(collapsed);
+  window.scrollTo(0,y);
+}
+
+function renderBlocks(rows, el){
+  let item=null, listBuf=null, tableBuf=null;
+  const closeList=()=>{ if(listBuf){ const ul=document.createElement('ul'); ul.className='prose'; ul.innerHTML=listBuf.join(''); (item||el).appendChild(ul); listBuf=null; } };
+  const closeTable=()=>{ if(tableBuf && tableBuf.length>=2){ (item||el).appendChild(buildTable(tableBuf)); } tableBuf=null; };
+  const target=()=> item||el;
+
+  for(const {line,idx} of rows){
+    const t=line.trim();
+    // table rows
+    if(/^\|.*\|$/.test(t)){ closeList(); (tableBuf=tableBuf||[]).push(t); continue; } else closeTable();
+    if(t===''){ closeList(); continue; }
+    if(t==='---'){ closeList(); continue; }
+
+    const h3=line.match(reH3), h4=line.match(reH4),
+          you=line.match(reYou), chk=line.match(reCheck), bul=line.match(reBullet);
+
+    if(h3){ closeList(); item=document.createElement('div'); item.className='item';
+      item.dataset.text=h3[1].toLowerCase(); item.dataset.start=idx; item.dataset.end=nextBound(idx);
+      const head=document.createElement('div'); head.className='itemhead';
+      const h=document.createElement('h3'); h.innerHTML=inline(h3[1]);
+      const s=+item.dataset.start, e=+item.dataset.end;
+      head.appendChild(h);
+      head.appendChild(mkIconBtn('＋','Add a note after this item',()=>insertNote(e)));
+      head.appendChild(mkIconBtn('✎','Edit this item',()=>enterEdit(item,s,e)));
+      const isNote=/📝/.test(h3[1]);
+      head.appendChild(mkIconBtn('🗑','Remove this '+(isNote?'note':'item'),
+        ()=>{ if(isNote||confirm('Delete this item from the punchlist?')) deleteBlock(s,e); }));
+      item.appendChild(head); el.appendChild(item); continue; }
+    if(h4){ closeList(); const h=document.createElement('h4'); h.innerHTML=inline(h4[1]); target().appendChild(h); continue; }
+
+    if(you){ closeList(); target().appendChild(buildYou(you,idx)); markItemText(item,line); continue; }
+    if(chk){ closeList(); target().appendChild(buildCheck(chk,idx)); markItemText(item,line); continue; }
+
+    if(bul && reOpts.test(line)){ closeList(); target().appendChild(buildOpts(bul[2], target())); markItemText(item,line); continue; }
+    if(bul){ (listBuf=listBuf||[]).push(`<li>${inline(bul[2])}</li>`); markItemText(item,line); continue; }
+
+    // paragraph
+    closeList();
+    const p=document.createElement('div'); p.className='prose'; p.innerHTML=inline(line); target().appendChild(p);
+    markItemText(item,line);
+  }
+  closeList(); closeTable();
+}
+function markItemText(item,line){ if(item) item.dataset.text=(item.dataset.text||'')+' '+line.toLowerCase(); }
+
+/* edit the raw markdown of one block [start,end); save splices LINES and re-renders */
+function enterEdit(card,start,end,isHeader){
+  const raw=LINES.slice(start,end).join('\n').replace(/\s+$/,'');
+  const ed=document.createElement('div'); ed.className='rawedit';
+  ed.innerHTML=`<textarea spellcheck="false"></textarea>
+    <div class="ederow"><button class="btn primary">Save</button><button class="btn cancel">Cancel</button>
+    <span class="edhint">markdown · ${isHeader?'title + intro':'this block'}</span></div>`;
+  const ta=ed.querySelector('textarea'); ta.value=raw;
+  if(isHeader){ const dt=document.getElementById('docTitle'), di=document.getElementById('docIntro');
+    dt.style.display='none'; di.style.display='none'; card.parentNode.insertBefore(ed,card); }
+  else card.replaceWith(ed);
+  const fit=()=>{ ta.style.height='auto'; ta.style.height=Math.max(ta.scrollHeight,120)+'px'; };
+  requestAnimationFrame(fit); ta.focus();
+  ed.querySelector('.btn.primary').onclick=()=>{ if(isHeader){document.getElementById('docTitle').style.display='';}
+    LINES.splice(start,end-start,...ta.value.replace(/\r\n/g,'\n').split('\n')); touch(); rerender(); };
+  ed.querySelector('.cancel').onclick=()=>{ if(isHeader){document.getElementById('docTitle').style.display='';} rerender(); };
+}
+/* insert a fresh YOU note block at line `at`, then focus it */
+function insertNote(at){
+  const block=['','### 📝 Note','','➡️ YOU: ',''];
+  LINES.splice(at,0,...block); touch(); rerender();
+  const ta=document.querySelector(`.you textarea[data-idx="${at+3}"]`);
+  if(ta){ ta.focus(); ta.scrollIntoView({block:'center',behavior:'smooth'}); }
+}
+/* delete the block [start,end) from the markdown, swallowing one preceding blank line */
+function deleteBlock(start,end){
+  let s=start;
+  if(s>0 && LINES[s-1].trim()==='') s--;   // avoid leaving a stacked blank line behind
+  LINES.splice(s,end-s); touch(); rerender();
+}
+
+function buildTable(rows){
+  const cells=r=>r.replace(/^\||\|$/g,'').split('|').map(c=>c.trim());
+  const tbl=document.createElement('table'); tbl.className='tbl';
+  const head=cells(rows[0]);
+  let start=1; if(/^[\s:|-]+$/.test(rows[1]||'')) start=2;
+  tbl.innerHTML='<thead><tr>'+head.map(h=>`<th>${inline(h)}</th>`).join('')+'</tr></thead>';
+  const tb=document.createElement('tbody');
+  for(let r=start;r<rows.length;r++){ tb.innerHTML+='<tr>'+cells(rows[r]).map(c=>`<td>${inline(c)}</td>`).join('')+'</tr>'; }
+  tbl.appendChild(tb); return tbl;
+}
+function buildYou(m,idx){
+  const wrap=document.createElement('div'); wrap.className='you';
+  wrap.innerHTML='<div class="you-label">Your answer</div>';
+  const ta=document.createElement('textarea'); ta.value=m[3].trim(); ta.rows=1;
+  if(ta.value) ta.classList.add('filled');
+  ta.dataset.idx=idx; ta.dataset.prefix=m[1]+m[2];
+  const grow=()=>{ ta.style.height='auto'; ta.style.height=Math.max(ta.scrollHeight,40)+'px'; };
+  ta.addEventListener('input',()=>{ grow(); ta.classList.toggle('filled', !!ta.value.trim());
+    LINES[idx]=ta.dataset.prefix+' '+ta.value.replace(/\n+/g,' '); touch(); updateMeter(); });
+  requestAnimationFrame(grow);
+  wrap.appendChild(ta); wrap._you=true; return wrap;
+}
+function buildCheck(m,idx){
+  const lbl=document.createElement('label'); lbl.className='check'+(m[2].toLowerCase()==='x'?' done':'');
+  const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=m[2].toLowerCase()==='x'; cb.dataset.idx=idx;
+  const span=document.createElement('span'); span.className='ctext prose'; span.innerHTML=inline(m[3]);
+  cb.addEventListener('change',()=>{ lbl.classList.toggle('done',cb.checked);
+    LINES[idx]=LINES[idx].replace(/\[([ xX])\]/, '['+(cb.checked?'x':' ')+']'); touch(); updateMeter(); });
+  lbl.appendChild(cb); lbl.appendChild(span); lbl._check=true; return lbl;
+}
+function buildOpts(text, itemEl){
+  const wrap=document.createElement('div'); wrap.className='opts';
+  const chips=[...text.matchAll(/`([^`]+)`/g)].map(x=>x[1]);
+  if(!chips.length){ const p=document.createElement('div'); p.className='prose'; p.innerHTML=inline(text); return p; }
+  chips.forEach(c=>{ const b=document.createElement('span'); b.className='chip'; b.textContent=c;
+    b.title='Use as your answer'; b.onclick=()=>{ const ta=itemEl.querySelector('.you textarea'); if(ta){ ta.value=c; ta.dispatchEvent(new Event('input')); ta.focus(); } };
+    wrap.appendChild(b); });
+  return wrap;
+}
+
+/* ============================================================
+   PROGRESS + FILTERS
+   ============================================================ */
+function updateMeter(){
+  const yous=[...document.querySelectorAll('.you textarea')];
+  const ans=yous.filter(t=>t.value.trim()).length;
+  const checks=[...document.querySelectorAll('.check input')];
+  const done=checks.filter(c=>c.checked).length;
+  const total=yous.length+checks.length, complete=ans+done;
+  const pct= total? Math.round(complete/total*100):0;
+  document.getElementById('meter').style.display = total? 'flex':'none';
+  document.getElementById('ring').style.setProperty('--p',pct);
+  document.getElementById('ringPct').textContent=pct+'%';
+  document.getElementById('meterTxt').innerHTML=`${ans}/${yous.length} answered · ${done}/${checks.length} done`;
+  // per-section counts
+  document.querySelectorAll('.section').forEach(sec=>{
+    const ty=[...sec.querySelectorAll('.you textarea')], tc=[...sec.querySelectorAll('.check input')];
+    const a=ty.filter(t=>t.value.trim()).length+tc.filter(c=>c.checked).length, n=ty.length+tc.length;
+    sec.querySelector('.scount').textContent = n? `${a}/${n}`:'';
+  });
+}
+let F={q:'',openOnly:false,todoOnly:false};
+function applyFilters(){
+  document.querySelectorAll('.item').forEach(it=>{
+    const txt=it.dataset.text||'';
+    let show = !F.q || txt.includes(F.q);
+    if(show && F.openOnly){ const ta=it.querySelector('.you textarea'); if(ta && ta.value.trim()) show=false; if(!ta && !it.querySelector('.check')) {} }
+    if(show && F.todoOnly){ const boxes=[...it.querySelectorAll('.check input')]; if(!boxes.length || boxes.every(b=>b.checked)) show=false; }
+    it.classList.toggle('hidden',!show);
+  });
+  document.querySelectorAll('.section').forEach(sec=>{
+    const items=[...sec.querySelectorAll('.item')];
+    // sections whose content sits directly under the ## heading (no ### items) always show;
+    // filters only act on item cards.
+    const any = items.length===0 || items.some(it=>!it.classList.contains('hidden'));
+    sec.style.display=any?'':'none';
+  });
+}
+
+/* ============================================================
+   FILE I/O  (open · autosave · reopen-last via IndexedDB)
+   ============================================================ */
+function touch(){ DIRTY=true; setStatus(); scheduleSave(); }
+let saveTimer=null;
+function scheduleSave(){ if(!FILE_HANDLE) return; clearTimeout(saveTimer); saveTimer=setTimeout(()=>save(true),700); }
+function setStatus(){
+  const chip=document.getElementById('statuschip'); chip.style.display='flex';
+  const dot=document.getElementById('statusDot'), txt=document.getElementById('statusTxt');
+  document.getElementById('saveBtn').disabled = !DIRTY;
+  if(!FILE_HANDLE){ dot.className='dot dirty'; txt.textContent = DIRTY? 'Unsaved (download to keep)':'Read-only'; return; }
+  if(DIRTY){ dot.className='dot dirty'; txt.textContent='Saving…'; }
+  else { dot.className='dot live'; txt.textContent=(FILE_HANDLE.name||'file')+' · saved'; }
+}
+async function save(auto){
+  if(!FILE_HANDLE){ if(!auto) downloadMD(); return; }
+  try{ const w=await FILE_HANDLE.createWritable(); await w.write(LINES.join('\n')); await w.close();
+    DIRTY=false; try{ LAST_MTIME=(await FILE_HANDLE.getFile()).lastModified; }catch(_){}; setStatus(); if(!auto) toast('Saved to '+FILE_HANDLE.name); }
+  catch(e){ toast('Save failed: '+e.message); }
+}
+function downloadMD(){
+  const blob=new Blob([LINES.join('\n')],{type:'text/markdown'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=(FILE_HANDLE?.name)||'punchlist.md'; a.click(); DIRTY=false; setStatus(); toast('Downloaded');
+}
+async function reloadFromDisk(force){
+  if(!FILE_HANDLE){ toast('Open a file first'); return; }
+  if(DIRTY && !force && !confirm('Reload from disk? Unsaved edits in this view will be replaced by the file on disk.')) return;
+  let f; try{ f=await FILE_HANDLE.getFile(); }catch(e){ toast('Reload failed: '+e.message); return; }
+  const t=await f.text(); LAST_MTIME=f.lastModified;
+  const collapsed=new Set([...document.querySelectorAll('.section.collapsed')].map(s=>s.dataset.title));
+  const y=window.scrollY;
+  LINES=t.replace(/\r\n/g,'\n').split('\n'); DIRTY=false;
+  render(collapsed); window.scrollTo(0,y); setStatus();
+}
+// detect edits made elsewhere (Obsidian, Claude actioning the punchlist, another machine)
+async function checkExternal(){
+  if(!FILE_HANDLE || document.querySelector('.rawedit')) return;   // don't yank the file from under an open raw editor
+  let f; try{ f=await FILE_HANDLE.getFile(); }catch(_){ return; }
+  if(LAST_MTIME==null){ LAST_MTIME=f.lastModified; return; }
+  if(f.lastModified===LAST_MTIME) return;
+  if(DIRTY){ toast('File changed on disk — click ↻ to reload (you have unsaved edits here)'); return; }
+  await reloadFromDisk(true); toast('Reloaded — file changed on disk');
+}
+window.addEventListener('focus', checkExternal);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) checkExternal(); });
+setInterval(checkExternal, 2500);
+
+function start(text){ LINES=text.replace(/\r\n/g,'\n').split('\n'); DIRTY=false;
+  document.getElementById('welcome').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  render(); setStatus(); }
+
+async function openFile(){
+  if(hasFS){
+    try{ const [h]=await window.showOpenFilePicker({types:[{description:'Markdown',accept:{'text/markdown':['.md','.markdown']}}]});
+      FILE_HANDLE=h; try{await idbSet('lastHandle',h);}catch(_){}; const f=await h.getFile(); LAST_MTIME=f.lastModified; start(await f.text()); toast('Connected · edits autosave'); }
+    catch(e){ if(e.name!=='AbortError') toast(e.message); }
+  } else {
+    const inp=document.createElement('input'); inp.type='file'; inp.accept='.md,.markdown';
+    inp.onchange=async()=>{ const f=inp.files[0]; if(f){ FILE_HANDLE=null; start(await f.text()); toast('Loaded read-only — use Save to download'); } };
+    inp.click();
+  }
+}
+async function reopenLast(){
+  const h=await idbGet('lastHandle'); if(!h) return;
+  const perm=await h.queryPermission({mode:'readwrite'});
+  if(perm!=='granted'){ const r=await h.requestPermission({mode:'readwrite'}); if(r!=='granted'){ toast('Permission denied'); return; } }
+  FILE_HANDLE=h; const f=await h.getFile(); LAST_MTIME=f.lastModified; start(await f.text()); toast('Reopened '+h.name);
+}
+
+/* ---- folder mode: connect a folder once, auto-open the newest punchlist ---- */
+let DIR_HANDLE=null;
+const PL_RE=/punchlist.*\.md$/i;
+async function listDir(){
+  const files=[];
+  for await (const [name,h] of DIR_HANDLE.entries()){ if(h.kind==='file' && /\.md$/i.test(name)) files.push(name); }
+  files.sort().reverse();                          // date-stamped names sort chronologically; newest first
+  const pl=files.filter(f=>PL_RE.test(f));
+  return pl.length? pl : files;                    // prefer files named like punchlists; else any .md
+}
+async function loadDir(name){
+  const files=await listDir();
+  const sel=document.getElementById('fileSwitch');
+  if(!files.length){ toast('No .md files in that folder'); sel.style.display='none'; return; }
+  const target=name||files[0];
+  const fh=await DIR_HANDLE.getFileHandle(target);
+  FILE_HANDLE=fh; const f=await fh.getFile(); LAST_MTIME=f.lastModified; start(await f.text());
+  sel.style.display=''; sel.innerHTML=files.map(f=>`<option ${f===target?'selected':''}>${f}</option>`).join('');
+}
+async function openFolder(){
+  if(!hasFS){ toast('Folder mode needs Chrome / Edge / Arc'); return; }
+  try{ const d=await window.showDirectoryPicker(); DIR_HANDLE=d; try{await idbSet('lastDir',d);}catch(_){}; await loadDir(); toast('Folder connected · opened newest'); }
+  catch(e){ if(e.name!=='AbortError') toast(e.message); }
+}
+async function reconnectDir(){
+  const d=await idbGet('lastDir'); if(!d) return;
+  if(await d.queryPermission({mode:'readwrite'})!=='granted'){
+    if(await d.requestPermission({mode:'readwrite'})!=='granted'){ toast('Permission denied'); return; } }
+  DIR_HANDLE=d; await loadDir();
+}
+// minimal IndexedDB for the file handle
+function idb(){ return new Promise((res,rej)=>{ const r=indexedDB.open('punchlist',1);
+  r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+async function idbSet(k,v){ const db=await idb(); return new Promise(res=>{ const tx=db.transaction('kv','readwrite'); tx.objectStore('kv').put(v,k); tx.oncomplete=()=>res(); }); }
+async function idbGet(k){ const db=await idb(); return new Promise(res=>{ const tx=db.transaction('kv','readonly'); const rq=tx.objectStore('kv').get(k); rq.onsuccess=()=>res(rq.result); rq.onerror=()=>res(null); }); }
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+let toastTimer; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2200); }
+
+/* ============================================================
+   WIRE UP
+   ============================================================ */
+const drawer=document.getElementById('drawer'), scrim=document.getElementById('scrim');
+function openDrawer(o){ drawer.classList.toggle('open',o); scrim.classList.toggle('open',o); }
+document.getElementById('themeBtn').onclick=()=>openDrawer(true);
+scrim.onclick=()=>openDrawer(false);
+document.getElementById('openBtn').onclick=openFile;
+document.getElementById('openBtn2').onclick=openFile;
+document.getElementById('folderBtn').onclick=openFolder;
+document.getElementById('openFolderBtn2').onclick=openFolder;
+document.getElementById('fileSwitch').onchange=e=>loadDir(e.target.value);
+document.getElementById('demoBtn').onclick=()=>{ FILE_HANDLE=null; start(DEMO); toast('Demo loaded (read-only)'); };
+document.getElementById('saveBtn').onclick=()=>save(false);
+document.getElementById('refreshBtn').onclick=()=>reloadFromDisk(false);
+document.getElementById('searchIn').oninput=e=>{ F.q=e.target.value.toLowerCase().trim(); applyFilters(); };
+document.getElementById('fOpen').onclick=e=>{ F.openOnly=!F.openOnly; e.target.classList.toggle('on',F.openOnly); applyFilters(); };
+document.getElementById('fTodo').onclick=e=>{ F.todoOnly=!F.todoOnly; e.target.classList.toggle('on',F.todoOnly); applyFilters(); };
+window.addEventListener('keydown',e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='s'){ e.preventDefault(); save(false); } });
+window.addEventListener('beforeunload',e=>{ if(DIRTY && !FILE_HANDLE){ e.preventDefault(); e.returnValue=''; } });
+
+// theme drawer controls
+function setTheme(t){ saveTheme(t); syncDrawer(t); }
+document.getElementById('presetSel').onchange=e=>{ const p=e.target.value;
+  if(p==='custom'){ const t=currentTheme(); t.preset='custom'; setTheme(t); return; }
+  const t=structuredClone(PRESETS[p]); t.preset=p; setTheme(t); };
+document.querySelectorAll('.swatch input[type=color]').forEach(inp=>{
+  inp.oninput=()=>{ const t=currentTheme(); t.vars[inp.dataset.var]=inp.value; t.preset='custom';
+    document.getElementById('presetSel').value='custom'; setTheme(t); }; });
+document.getElementById('fHead').onchange=e=>{ const t=currentTheme(); t.fonts.head=e.target.value||'Poppins'; setTheme(t); };
+document.getElementById('fBody').onchange=e=>{ const t=currentTheme(); t.fonts.body=e.target.value||'Inter'; setTheme(t); };
+document.getElementById('wmIn').oninput=e=>{ const t=currentTheme(); t.wordmark=e.target.value; if(!t.logo) setTheme(t); };
+document.getElementById('logoUp').onclick=()=>document.getElementById('logoFile').click();
+document.getElementById('logoFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ const t=currentTheme(); t.logo=r.result; setTheme(t); toast('Logo set'); }; r.readAsDataURL(f); };
+document.getElementById('logoClear').onclick=()=>{ const t=currentTheme(); t.logo=''; setTheme(t); };
+document.getElementById('resetTheme').onclick=()=>{ const p=document.getElementById('presetSel').value;
+  const base=PRESETS[p]||PRESETS.aurora; const t=structuredClone(base); t.preset=(PRESETS[p]?p:'aurora'); setTheme(t); toast('Theme reset'); };
+document.getElementById('exportTheme').onclick=()=>{ const blob=new Blob([JSON.stringify(currentTheme(),null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='punchlist-theme.json'; a.click(); };
+document.getElementById('importTheme').onclick=()=>document.getElementById('importFile').click();
+document.getElementById('importFile').onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader(); r.onload=()=>{ try{ setTheme(JSON.parse(r.result)); toast('Theme imported'); }catch(_){ toast('Bad theme file'); } }; r.readAsText(f); };
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+applyTheme(currentTheme()); syncDrawer(currentTheme());
+document.getElementById('fsNote').textContent = hasFS
+  ? 'Edits write back to the file automatically (Chrome / Edge / Arc).'
+  : 'This browser can’t write files directly — you can load + edit, then Save downloads an updated .md. (Use Chrome/Edge/Arc for live write-back.)';
+(async()=>{ const b=document.getElementById('reopenBtn');
+  const dir=await idbGet('lastDir');
+  if(dir){ b.style.display=''; b.textContent='📁 Open latest in '+dir.name; b.onclick=reconnectDir; return; }
+  const h=await idbGet('lastHandle');
+  if(h){ b.style.display=''; b.textContent='Reopen '+h.name; b.onclick=reopenLast; }
+})();
+
+/* ---------- bundled demo punchlist ---------- */
+const DEMO=`# Punchlist — Demo
+
+A tiny sample so you can see how it works. Open your own \`.md\` to edit for real.
+
+---
+
+## 🔴 Needs you now
+
+### 1. Approve the thing
+Short context line explaining the decision. **Bold** for emphasis, \`code\` for commands, and [a link](https://example.com).
+- Options: \`approve\` / \`hold\` / \`needs changes\`
+
+➡️ YOU:
+
+### 2. Ship checklist
+- [ ] Write the release note
+- [x] Tag the build
+- [ ] Post to the channel
+
+➡️ YOU:
+
+## 🟢 FYI
+### 3. Nothing owed
+Just an informational item with no answer field.
+`;
+</script>
+</body>
+</html>
