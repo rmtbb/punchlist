@@ -8,6 +8,8 @@
 
 One self-contained `index.html`. No build. No server. No dependencies. No account. No tracking. Double-click it and go.
 
+> _Fully offline by default — zero third-party requests. Prettier web fonts (Poppins/Inter) are an **optional toggle** in the theme panel; turning it on is the only thing that ever talks to Google._
+
 > The markdown is the source of truth. Punchlist is just a really nice way to live inside it.
 
 ---
@@ -43,7 +45,7 @@ The only problem with raw markdown is that staring at forty `➡️ YOU:` lines 
 - 🎨 **Themeable to the teeth.** Presets, custom colors, any Google Font by name, your own logo or wordmark — all stored in your browser, never written into the markdown.
 - 📁 **Folder mode.** Point it at a folder once; it auto-opens the **newest** `_punchlist-*.md` every time, with a dropdown to switch days. One click to today's list.
 - ✏️ **Edit anything.** Pencil any block to edit its raw markdown, `＋` to drop a note anywhere, `🗑` to delete one. It's your file.
-- 🪶 **Zero everything.** One HTML file, ~50KB, no build step, no server, no npm install, works offline. Your data never leaves your machine.
+- 🪶 **Zero everything.** One HTML file, no build step, no server, no npm install, no analytics. Works fully offline; your data never leaves your machine. (Web fonts are an opt-in toggle — off by default.)
 
 ---
 
@@ -122,7 +124,7 @@ Everything visual is a theme, stored in `localStorage` — it never touches your
 - pick a **preset** (Aurora / Midnight / Paper) or go fully Custom,
 - upload **any logo** or set a wordmark,
 - set **any colors** — accent, background, surface, text, the answer + done colors, borders,
-- set **any fonts** — type any Google Font family name and it loads on the fly,
+- set **any fonts** — uses your system font stack by default; flip on **Load Google Fonts** to use Poppins/Inter or type any Google Font family name (this is the one and only optional network call),
 - **export / import** a theme as JSON to share or reuse.
 
 The bundled default is **Aurora**, an indigo/violet dark palette. Make it yours in about thirty seconds.
@@ -134,7 +136,7 @@ The bundled default is **Aurora**, an indigo/violet dark palette. Make it yours 
 - **`⌘S` / `Ctrl+S`** — save now.
 - **Top bar** — live completion ring (answered + checked / total), per-section counts, and connection state.
 - **Filters** — show *unanswered only*, *open checkboxes only*, or search items by text.
-- **Privacy** — there is no backend. Nothing is uploaded. Your files stay on your disk, full stop.
+- **Privacy** — there is no backend and no analytics. Nothing is uploaded; your files stay on your disk, full stop. The only outbound request that can ever happen is Google Fonts, and only if you opt in.
 
 ---
 
