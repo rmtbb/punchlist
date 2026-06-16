@@ -4,164 +4,90 @@
 
 <h1 align="center">📋 Punchlist</h1>
 
-**A beautiful, themeable lens over a plain markdown checklist — that writes your answers _straight back into the file_.**
+<p align="center"><b>A live checklist you and your coding agent fill out together.</b></p>
 
-One self-contained `index.html`. No build. No server. No dependencies. No account. No tracking. Double-click it and go.
-
-> _Fully offline by default — zero third-party requests. Prettier web fonts (Poppins/Inter) are an **optional toggle** in the theme panel; turning it on is the only thing that ever talks to Google._
-
-> The markdown is the source of truth. Punchlist is just a really nice way to live inside it.
+<p align="center">Your agent writes the questions. You answer them in a beautiful browser UI — at your own pace. It reads them back and gets to work, and you watch the results land <i>live</i>.</p>
 
 ---
 
-## 😤 The problem (you've felt this)
+## The problem
 
-You're working with a coding agent — Claude Code, Cursor, whatever's hot this week. It's cranking. And then it stops and hits you with **the wall of questions**:
+You're working with a coding agent (Claude Code, Cursor, whatever). It stops and hits you with **the wall of questions**:
 
-> "Should I close these 6 tickets? Which database for the cache? Want me to delete the old migration? Here are 9 findings, which do you want fixed? Also pick a name for the service. Also—"
+> Close these 6 tickets? Which DB for the cache? Here are 9 findings — which do you want fixed? Pick a name for the service. Also—
 
-Now you're stuck. Chat is a **terrible** surface for this:
+A chat box is a miserable place to answer that. Replies get tangled ("yes to 1 and 3, no to 4, skip 2…"), you can't sit on the hard one for an hour without blocking everything, and two messages later you're scrolling up asking "wait, what was #4?"
 
-- 🌀 Answer in prose and your replies get tangled — "yes to 1 and 3, no to 4, skip 2, do 5 later."
-- ⏳ You can't think about #7 for an hour without blocking the whole thread.
-- 🧠 The agent loses the thread, you lose the thread, everyone loses the thread.
-- 📜 Two messages later you're scrolling up going "wait, what was item 4 again?"
+**A batch of decisions isn't a conversation. It's a list.** So make it one.
 
-A batch of decisions isn't a conversation. **It's a list.** It wants to be a document you chew on at your own pace — tick a box here, type a note there, leave the hard one blank till after lunch — and then hand back, answered.
+## The fix
 
-So: make it a list. A markdown file. The agent writes the questions, **you** fill in the answers inline, and the agent reads them back and acts. Clean contract. The file is the API between you and your robot.
+Your agent writes a markdown punchlist. You open it in Punchlist and work it like a form — tick boxes, type answers, click option chips, leave the hard ones blank. Then you say **"check it out"** and the agent reads your answers, does the work, and annotates each item with what it did.
 
-The only problem with raw markdown is that staring at forty `➡️ YOU:` lines in a text editor is... bleak.
+The magic: **it's live both ways.**
 
-**That's Punchlist.** It turns that file into a gorgeous, interactive, themeable UI — and every checkbox you tick and every answer you type **autosaves right back into the same `.md`**. The agent never has to leave the file. Neither do you.
-
----
-
-## ✨ What you get
-
-- 🎯 **Answer at your own pace.** Work top to bottom, tick boxes, type answers, click an `Options:` chip to drop it into the field. Leave the hard ones blank. Come back later.
-- 💾 **Write-back to the actual file.** In Chrome / Edge / Arc, every edit autosaves to the same `.md` via the [File System Access API](https://developer.mozilla.org/en-US/docs/Web/API/File_System_Access_API). The agent reads the identical file back. No copy-paste, no export dance.
-- 🩹 **Surgical, never destructive.** It rewrites *only* the answer lines and checkbox markers it owns, by line number. Your prose, headings, tables, and formatting are never re-serialized or touched.
-- 🎨 **Themeable to the teeth.** Presets, custom colors, any Google Font by name, your own logo or wordmark — all stored in your browser, never written into the markdown.
-- 📁 **Folder mode.** Point it at a folder once; it auto-opens the **newest** `_punchlist-*.md` every time, with a dropdown to switch days. One click to today's list.
-- ✏️ **Edit anything.** Pencil any block to edit its raw markdown, `＋` to drop a note anywhere, `🗑` to delete one. It's your file.
-- 🪶 **Zero everything.** One HTML file, no build step, no server, no npm install, no analytics. Works fully offline; your data never leaves your machine. (Web fonts are an opt-in toggle — off by default.)
-
----
-
-## 🚀 Quickstart
-
-```bash
-git clone https://github.com/rmtbb/punchlist.git
-cd punchlist
-open index.html        # macOS — or just double-click it
+```
+  YOU                          PUNCHLIST (browser)                 YOUR AGENT
+  type an answer  ───────────▶  autosaves to the .md  ───────────▶  reads it
+  watch it update  ◀───────────  re-renders in ~1s    ◀───────────  writes results
 ```
 
-1. Click **Open a file** and pick any markdown checklist (try `examples/sample-punchlist.md`).
-2. Type into the answer fields, tick boxes — it autosaves back to the file (Chromium browsers).
-3. That's it. There is no step 3.
+No copy-paste. No terminal ping-pong. No re-reading raw markdown. You see the agent work in real time. It's the human-in-the-loop UI that coding agents have been missing.
 
-> 🧭 **Write-back needs a Chromium-based browser** (Chrome, Edge, Arc, Brave). Safari/Firefox can still load + edit, but **Save** downloads an updated copy instead of writing in place.
+## Add it as a Claude Code skill
 
----
+This is where it shines. Three commands:
 
-## 📝 The format (it's just markdown)
+```bash
+git clone https://github.com/rmtbb/punchlist.git ~/punchlist
+mkdir -p ~/.claude/skills/punchlist
+ln -s ~/punchlist/skill/SKILL.md ~/.claude/skills/punchlist/SKILL.md
+```
 
-Punchlist reads plain markdown plus a couple of featherweight conventions:
+Restart Claude Code, then just ask: **"make me a punchlist for X"** (or type `/punchlist`). Claude generates the list, opens it in your browser, and waits. You fill it in, say **"check it out,"** and watch it run. That's the whole loop.
+
+> Works with any agent that can write a markdown file — the skill just makes Claude Code drive it automatically.
+
+## Or use it solo (no agent)
+
+It's a great personal checklist on its own:
+
+```bash
+open ~/punchlist/index.html      # or just double-click it
+```
+
+Click **Open a file**, pick any markdown checklist, and start ticking. Your edits save straight back to the file.
+
+## What it understands
+
+Plain markdown, plus a few light conventions:
 
 | You write | You get |
 |---|---|
-| `# Title` | the document title |
-| `## 🔴 Section` | a collapsible section (the leading emoji sets the accent color) |
+| `## 🔴 Section` | a collapsible section (the emoji sets the accent color) |
 | `### Item` | an item card |
-| `➡️ YOU:` | an editable answer field — **the thing that writes back** |
-| `- [ ] task` / `- [x] done` | a checkbox (writes back) |
-| `- Options: ` `` `lock it` `` ` / ` `` `hold` `` | clickable chips that fill the answer |
-| tables, **bold**, `code`, [links], ~~strike~~, `[[wikilinks]]` | rendered |
-
-A tiny example:
+| `➡️ YOU:` | an editable answer field that writes back |
+| `- [ ] task` | a checkbox that writes back |
+| `- Options: ` `` `yes` `` ` / ` `` `no` `` | clickable chips that fill the answer |
 
 ```markdown
-# Punchlist — Launch
-
-## 🔴 Needs you now
-
-### 1. Lock the launch date
-Marketing wants the 14th; eng prefers the 21st. No wrong answer — just lock it.
+### Lock the launch date
+Marketing wants the 14th; eng prefers the 21st.
 - Options: `the 14th` / `the 21st` / `one more day`
-
-➡️ YOU:
-
-### 2. Release checklist
-- [ ] Cut the release branch
-- [x] Update the changelog
-- [ ] Smoke-test staging
 
 ➡️ YOU:
 ```
 
-Open that in Punchlist and it becomes a clickable, themeable, self-saving control panel. Edit it in plain Obsidian on your phone and it's... still just a markdown file. Mix surfaces freely — the format is identical everywhere.
+Edit it in the app, in Obsidian, in any editor — same file, same format. Mix freely.
 
----
+## Why it's nice
 
-## 🤖 Built for the human-in-the-loop
+- ⚡ **Live two-way sync** — your answers flow in, the agent's results flow out, both visible instantly.
+- 🩹 **Surgical** — only the answer lines and checkboxes are rewritten; your prose, headings, and tables are never touched.
+- 🎨 **Themeable** — presets, custom colors, your own logo. Make it yours in thirty seconds.
+- 🔒 **Private & local** — one HTML file, no build, no server, no account, no analytics. Your data never leaves your machine. (Web fonts are an optional, off-by-default toggle — the only thing that ever calls out.)
 
-Punchlist was born working alongside agentic coding tools, where the agent regularly needs a batch of decisions from a human without stalling the whole session. The pattern is dead simple and tool-agnostic:
-
-1. **The agent writes a punchlist** — every open question as a `➡️ YOU:` line or checkbox.
-2. **You work it in Punchlist** at your own pace; answers autosave into the `.md`.
-3. **The agent reads the same file back** and actions everything you answered, leaving blanks alone.
-4. **Repeat.** It's re-entrant — answer a few more, hand it back, keep going.
-
-It pairs naturally with a [Claude Code](https://www.anthropic.com/claude-code) skill that generates the daily `_punchlist-YYYY-MM-DD.md` and pops this app open — but nothing here is tied to any one agent or vendor. Any tool (or human) that can write a markdown file can drive it. It's equally happy as a plain personal to-do list with no robot in sight.
-
----
-
-## 🎨 Theming
-
-Everything visual is a theme, stored in `localStorage` — it never touches your markdown. Open the 🎨 panel to:
-
-- pick a **preset** (Aurora / Midnight / Paper) or go fully Custom,
-- upload **any logo** or set a wordmark,
-- set **any colors** — accent, background, surface, text, the answer + done colors, borders,
-- set **any fonts** — uses your system font stack by default; flip on **Load Google Fonts** to use Poppins/Inter or type any Google Font family name (this is the one and only optional network call),
-- **export / import** a theme as JSON to share or reuse.
-
-The bundled default is **Aurora**, an indigo/violet dark palette. Make it yours in about thirty seconds.
-
----
-
-## ⌨️ Good to know
-
-- **`⌘S` / `Ctrl+S`** — save now.
-- **Top bar** — live completion ring (answered + checked / total), per-section counts, and connection state.
-- **Filters** — show *unanswered only*, *open checkboxes only*, or search items by text.
-- **Privacy** — there is no backend and no analytics. Nothing is uploaded; your files stay on your disk, full stop. The only outbound request that can ever happen is Google Fonts, and only if you opt in.
-
----
-
-## 🛠️ How it works under the hood
-
-- The whole app is one `index.html` (HTML + CSS + vanilla JS, no framework).
-- Markdown is parsed into lines; each interactive control remembers its **line number**.
-- Typing into an answer edits that one line in place. Add / edit / delete operations splice the markdown and re-render, recomputing every line map — your scroll position and collapsed sections survive.
-- Writes go through the File System Access API to the file handle you granted; it's remembered across sessions so reopening is one click.
-
-No magic, no lock-in. Worst case, close the tab and your markdown is exactly where you left it.
-
----
-
-## 🗺️ Roadmap-ish ideas (not built)
-
-- A hosted version (it's static — any static host works).
-- Drag-to-reorder items.
-- More presets, because why not.
-
-PRs and ideas welcome.
-
----
-
-## 📄 License
+## License
 
 [MIT](LICENSE) © Remote BB. Do whatever you want with it.
 
