@@ -1,4 +1,8 @@
-# 📋 Punchlist
+<p align="center">
+  <img src="assets/punchlist-logo.png" alt="Punchlist" width="200" />
+</p>
+
+<h1 align="center">📋 Punchlist</h1>
 
 **A beautiful, themeable lens over a plain markdown checklist — that writes your answers _straight back into the file_.**
 
