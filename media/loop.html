@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#1b1b1e; --surface:#26262c; --surface2:#2e2e35; --text:#e8e8ec;
+    --muted:#a8a8b2; --faint:#82828d; --border:#38383f;
+    --accent:#d85c54; --amber:#e0a15c; --go:#6fb083;
+  }
+  *{margin:0; padding:0; box-sizing:border-box; -webkit-font-smoothing:antialiased;}
+  html,body{width:840px; height:480px; overflow:hidden;}
+  #stage{
+    position:relative; width:840px; height:480px;
+    background:
+      radial-gradient(720px 420px at 14% -12%, rgba(216,92,84,.13), transparent 62%),
+      radial-gradient(620px 520px at 108% 120%, rgba(224,161,92,.07), transparent 60%),
+      var(--bg);
+    font-family:'Inter',-apple-system,sans-serif; color:var(--text);
+  }
+
+  /* top bar */
+  .top{position:absolute; left:30px; right:30px; top:24px; display:flex; align-items:center; gap:11px;}
+  .top img{width:30px; height:30px; display:block;}
+  .brand{font-family:'Poppins',sans-serif; font-weight:600; font-size:18px; letter-spacing:.2px;}
+  .pill{margin-left:auto; display:flex; align-items:center; gap:8px;
+    background:var(--surface); border:1px solid var(--border); border-radius:999px;
+    padding:6px 13px 6px 11px; font-size:12.5px; color:var(--muted);}
+  .pill .dot{width:8px; height:8px; border-radius:50%; background:var(--faint);}
+
+  /* card */
+  .card{position:absolute; left:120px; top:92px; width:600px;
+    background:var(--surface); border:1px solid var(--border); border-radius:16px;
+    padding:22px 26px 24px; box-shadow:0 24px 60px rgba(0,0,0,.42);}
+  .sect{display:flex; align-items:center; gap:8px; font-size:11.5px; letter-spacing:1.4px;
+    text-transform:uppercase; color:var(--faint); margin-bottom:13px;}
+  .sect .sdot{width:9px; height:9px; border-radius:50%; background:var(--amber);}
+  .title{font-family:'Poppins',sans-serif; font-weight:600; font-size:20px; line-height:1.25;
+    display:flex; align-items:center; gap:9px;}
+  .title .chk{color:var(--go); font-size:18px; display:inline-flex;}
+  .ctx{font-size:13.5px; color:var(--muted); margin-top:7px; line-height:1.5;}
+
+  .chips{display:flex; gap:8px; margin-top:15px;}
+  .chip{font-size:12.5px; color:var(--muted); border:1px solid var(--border);
+    border-radius:8px; padding:6px 11px; background:transparent; transition:none;}
+  .chip.on{color:var(--text); border-color:var(--accent); background:rgba(216,92,84,.14);}
+
+  .alabel{display:flex; align-items:center; gap:6px; font-size:10.5px; letter-spacing:1.2px;
+    text-transform:uppercase; color:var(--accent); margin:18px 0 7px; font-weight:600;}
+  .field{background:var(--surface2); border:1px solid var(--border); border-radius:9px;
+    padding:11px 13px; min-height:42px; font-size:14.5px; color:var(--text); display:flex; align-items:center;}
+  .caret{display:inline-block; width:2px; height:18px; background:var(--accent);
+    margin-left:1px; border-radius:1px;}
+
+  .done{margin-top:14px; border-left:3px solid var(--go); padding:2px 0 2px 12px;
+    font-size:13.5px; color:var(--text); line-height:1.5;}
+  .done .tag{color:var(--go); font-weight:700; font-family:'Poppins',sans-serif; letter-spacing:.3px;}
+
+  /* steps */
+  .steps{position:absolute; left:0; right:0; bottom:30px; display:flex; justify-content:center; gap:34px;}
+  .step{display:flex; align-items:center; gap:9px; font-size:13px; color:var(--faint); font-weight:500;}
+  .step .num{width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700; background:var(--surface); border:1px solid var(--border); color:var(--faint);
+    font-family:'Poppins',sans-serif;}
+  .step.on{color:var(--text);}
+  .step.on .num{background:var(--accent); border-color:var(--accent); color:#fff;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="top">
+    <img src="../assets/punchlist-logo.png" alt="" />
+    <div class="brand">Punchlist</div>
+    <div class="pill"><span class="dot" id="pdot"></span><span id="ptxt">Ready</span></div>
+  </div>
+
+  <div class="card">
+    <div class="sect"><span class="sdot"></span><span>Needs your call</span></div>
+    <div class="title"><span id="chk" class="chk" style="display:none">✓</span><span>Lock the launch date</span></div>
+    <div class="ctx">Marketing wants the 14th. Eng prefers the 21st.</div>
+    <div class="chips">
+      <div class="chip" id="c0">the 14th</div>
+      <div class="chip" id="c1">the 21st</div>
+      <div class="chip" id="c2">one more day</div>
+    </div>
+    <div class="alabel">➜ Your answer</div>
+    <div class="field"><span id="ans"></span><span class="caret" id="caret"></span></div>
+    <div class="done" id="done" style="opacity:0">
+      <span class="tag">→ DONE</span>&nbsp; <span id="donetxt"></span>
+    </div>
+  </div>
+
+  <div class="steps">
+    <div class="step" id="s1"><span class="num">1</span><span>You answer</span></div>
+    <div class="step" id="s2"><span class="num">2</span><span>Claude reads it</span></div>
+    <div class="step" id="s3"><span class="num">3</span><span>Done, live</span></div>
+  </div>
+</div>
+
+<script>
+const ANS  = "the 21st";
+const DONE = "Locked the 21st. Scheduled the announcement posts.";
+
+const clamp = x => x<0?0 : x>1?1 : x;
+const seg   = (t,a,b) => clamp((t-a)/(b-a));
+const ease  = x => x<.5 ? 2*x*x : 1 - Math.pow(-2*x+2,2)/2;
+
+const $ = id => document.getElementById(id);
+
+// window.render(t), t in [0,1) — pure function of t, no internal state.
+window.render = function(t){
+  const reset = ease(seg(t, 0.93, 1.0));   // fade everything back to the empty start for a seamless loop
+  const live  = 1 - reset;
+
+  // 1 — type the answer
+  const aLen = Math.round(ease(seg(t, 0.07, 0.27)) * ANS.length);
+  $('ans').textContent = ANS.slice(0, aLen);
+
+  // caret: solid while typing, blink while the field is the focus (step 1), gone afterward
+  const typing = t > 0.07 && t < 0.27;
+  const blink  = Math.floor(t * 16) % 2 === 0;
+  const caretOn = live > 0 && (typing || (t < 0.40 && blink));
+  $('caret').style.opacity = caretOn ? 1 : 0;
+
+  // chip highlight once the answer is in
+  $('c1').classList.toggle('on', t > 0.24 && reset < 0.5);
+
+  // status pill
+  let txt = 'Ready', col = 'var(--faint)';
+  if (t >= 0.07 && t < 0.33){ txt = 'Saving…';         col = 'var(--amber)'; }
+  else if (t >= 0.33 && t < 0.42){ txt = 'Saved';      col = 'var(--go)'; }
+  else if (t >= 0.42 && t < 0.58){ txt = 'Claude reading…'; col = 'var(--accent)'; }
+  else if (t >= 0.58 && t < 0.93){ txt = 'Done · live'; col = 'var(--go)'; }
+  $('ptxt').textContent = txt;
+  $('pdot').style.background = col;
+
+  // step indicator
+  let step = (t < 0.42 || reset > 0.5) ? 1 : (t < 0.58 ? 2 : 3);
+  $('s1').classList.toggle('on', step === 1);
+  $('s2').classList.toggle('on', step === 2);
+  $('s3').classList.toggle('on', step === 3);
+
+  // 3 — the agent writes the result
+  const dFade  = ease(seg(t, 0.58, 0.67)) * live;
+  const dSlide = (1 - ease(seg(t, 0.58, 0.67))) * 8;
+  const dLen   = Math.round(ease(seg(t, 0.62, 0.86)) * DONE.length);
+  $('done').style.opacity = dFade;
+  $('done').style.transform = `translateY(${dSlide}px)`;
+  $('donetxt').textContent = DONE.slice(0, dLen);
+
+  // item gets its ✅
+  const chk = $('chk');
+  chk.style.display = (seg(t,0.60,0.72) > 0 && live > 0.3) ? 'inline-flex' : 'none';
+  chk.style.opacity = ease(seg(t, 0.60, 0.72)) * live;
+
+  // global loop fade-out of the answer too, so t≈1 matches t≈0
+  $('ans').style.opacity = live;
+};
+
+window.render(0);
+window.__ready = true;
+</script>
+</body>
+</html>

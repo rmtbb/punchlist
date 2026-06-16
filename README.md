@@ -8,6 +8,10 @@
 
 <p align="center">Your agent writes the questions. You answer them in a beautiful browser UI — at your own pace. It reads them back and gets to work, and you watch the results land <i>live</i>.</p>
 
+<p align="center">
+  <img src="assets/demo.gif" alt="Punchlist live loop: you answer, Claude reads it, it's done — live in the browser" width="760" />
+</p>
+
 ---
 
 ## The problem
