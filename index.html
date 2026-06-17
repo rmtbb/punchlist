@@ -545,7 +545,11 @@ function renderBlocks(rows, el){
       continue;
     }
     const fence=line.match(/^(\s*)```\s*([\w+.#-]*)/);
-    if(fence){ closeList(); closeTable(); codeBuf=[]; codeLang=fence[2]||''; codeIndent=fence[1].length; continue; }
+    // only open a code block if a closing fence exists later in this section —
+    // a lone/unbalanced ``` must NOT swallow the YOU fields and items after it
+    if(fence && rows.some(r=>r.idx>idx && /^\s*```/.test(r.line))){
+      closeList(); closeTable(); codeBuf=[]; codeLang=fence[2]||''; codeIndent=fence[1].length; continue;
+    }
     // table rows
     if(/^\|.*\|$/.test(t)){ closeList(); (tableBuf=tableBuf||[]).push(t); continue; } else closeTable();
     if(t===''){ closeList(); continue; }
