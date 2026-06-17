@@ -18,7 +18,7 @@
 
 You're working with a coding agent (Claude Code, Cursor, whatever). It stops and hits you with **the wall of questions**:
 
-> Close these 6 tickets? Which DB for the cache? Here are 9 findings — which do you want fixed? Pick a name for the service. Also—
+> Ship these 6 edits? Tailwind or CSS modules? Here are 9 refactors — which should I do? Name the new component. Also—
 
 A chat box is a miserable place to answer that. Replies get tangled ("yes to 1 and 3, no to 4, skip 2…"), you can't sit on the hard one for an hour without blocking everything, and two messages later you're scrolling up asking "wait, what was #4?"
 
