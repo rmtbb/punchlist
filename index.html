@@ -120,6 +120,25 @@ h1,h2,h3,h4{font-family:var(--font-head); font-weight:600; line-height:1.2}
 .prose strong{color:var(--text); font-weight:600}
 .prose del{color:var(--faint)}
 
+/* fenced code blocks — copyable, chat-style */
+.codeblock{margin:11px 0; border:1px solid var(--border); border-radius:10px; overflow:hidden;
+  background:var(--bg2)}
+.codehead{display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:5px 7px 5px 12px; border-bottom:1px solid var(--border);
+  background:color-mix(in srgb,var(--surface) 70%,transparent)}
+.codelang{font-family:var(--font-head); font-size:11px; letter-spacing:.05em; text-transform:uppercase;
+  color:var(--faint)}
+.copybtn{display:inline-flex; align-items:center; gap:5px; font-family:var(--font-body);
+  font-size:12px; font-weight:500; color:var(--muted); background:var(--surface);
+  border:1px solid var(--border); padding:4px 9px; border-radius:7px; cursor:pointer; transition:.15s}
+.copybtn:hover{background:var(--surface2); color:var(--text);
+  border-color:color-mix(in srgb,var(--accent) 50%,var(--border)); transform:translateY(-1px)}
+.copybtn.done{color:var(--go); border-color:color-mix(in srgb,var(--go) 45%,var(--border))}
+.copybtn svg{width:13px; height:13px; flex:none}
+.codeblock pre{margin:0; padding:12px 14px; overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12.5px; line-height:1.5; color:var(--text)}
+.codeblock pre code{background:none; padding:0; border-radius:0; font-size:inherit; color:inherit; white-space:pre}
+
 /* tables */
 .tbl{width:100%; border-collapse:collapse; margin:10px 0; font-size:12.5px}
 .tbl th,.tbl td{border:1px solid var(--border); padding:6px 9px; text-align:left; vertical-align:top}
@@ -512,13 +531,21 @@ function rerender(){
 }
 
 function renderBlocks(rows, el){
-  let item=null, listBuf=null, tableBuf=null;
+  let item=null, listBuf=null, tableBuf=null, codeBuf=null, codeLang='', codeIndent=0;
   const closeList=()=>{ if(listBuf){ const ul=document.createElement('ul'); ul.className='prose'; ul.innerHTML=listBuf.join(''); (item||el).appendChild(ul); listBuf=null; } };
   const closeTable=()=>{ if(tableBuf && tableBuf.length>=2){ (item||el).appendChild(buildTable(tableBuf)); } tableBuf=null; };
   const target=()=> item||el;
 
   for(const {line,idx} of rows){
     const t=line.trim();
+    // fenced code blocks — accumulate raw lines until the closing fence
+    if(codeBuf!==null){
+      if(/^\s*```/.test(line)){ target().appendChild(buildCodeBlock(codeBuf,codeLang)); markItemText(item,codeBuf.join(' ')); codeBuf=null; codeLang=''; }
+      else codeBuf.push(line.slice(codeIndent));
+      continue;
+    }
+    const fence=line.match(/^(\s*)```\s*([\w+.#-]*)/);
+    if(fence){ closeList(); closeTable(); codeBuf=[]; codeLang=fence[2]||''; codeIndent=fence[1].length; continue; }
     // table rows
     if(/^\|.*\|$/.test(t)){ closeList(); (tableBuf=tableBuf||[]).push(t); continue; } else closeTable();
     if(t===''){ closeList(); continue; }
@@ -552,7 +579,30 @@ function renderBlocks(rows, el){
     const p=document.createElement('div'); p.className='prose'; p.innerHTML=inline(line); target().appendChild(p);
     markItemText(item,line);
   }
+  if(codeBuf!==null){ target().appendChild(buildCodeBlock(codeBuf,codeLang)); }
   closeList(); closeTable();
+}
+function buildCodeBlock(lines, lang){
+  const wrap=document.createElement('div'); wrap.className='codeblock';
+  const text=lines.join('\n');
+  const head=document.createElement('div'); head.className='codehead';
+  const label=document.createElement('span'); label.className='codelang'; label.textContent=lang||'code';
+  const btn=document.createElement('button'); btn.type='button'; btn.className='copybtn';
+  const copyIco='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+  const idle='<span>Copy</span>';
+  btn.innerHTML=copyIco+idle;
+  btn.onclick=async()=>{
+    try{
+      if(navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+      else { const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+      btn.classList.add('done'); btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span>Copied</span>';
+      clearTimeout(btn._t); btn._t=setTimeout(()=>{ btn.classList.remove('done'); btn.innerHTML=copyIco+idle; },1500);
+    }catch(_){ toast('Copy failed'); }
+  };
+  head.appendChild(label); head.appendChild(btn);
+  const pre=document.createElement('pre'); const code=document.createElement('code'); code.textContent=text; pre.appendChild(code);
+  wrap.appendChild(head); wrap.appendChild(pre);
+  return wrap;
 }
 function markItemText(item,line){ if(item) item.dataset.text=(item.dataset.text||'')+' '+line.toLowerCase(); }
 
@@ -863,6 +913,14 @@ Short context line explaining the decision. **Bold** for emphasis, \`code\` for 
 ## 🟢 FYI
 ### 3. Nothing owed
 Just an informational item with no answer field.
+
+### 4. Run this when you get a sec
+A fenced code block renders with a copy button — hover and grab it.
+
+\`\`\`bash
+git pull && npm run build
+open dist/index.html
+\`\`\`
 `;
 </script>
 </body>
